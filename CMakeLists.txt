@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 add_executable(tape_sorter
     src/main.cpp
+    src/ConfigReader.cpp
 )
 
 target_include_directories(tape_sorter PRIVATE include)
