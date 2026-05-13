@@ -2,4 +2,4 @@ read_delay_ms=0
 write_delay_ms=0
 move_delay_ms=0
 rewind_delay_ms=0
-m_limit_bytes=1024
+m_limit_bytes=8
