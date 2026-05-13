@@ -11,6 +11,19 @@
 
 namespace {
 
+    const std::filesystem::path temp_work_dir = std::filesystem::path("tmp") / "sort_work";
+
+    void prepare_temp_work_dir()
+    {
+        std::filesystem::remove_all(temp_work_dir);
+        std::filesystem::create_directories(temp_work_dir);
+    }
+
+    void remove_temp_work_dir()
+    {
+        std::filesystem::remove_all(temp_work_dir);
+    }
+
     void transfer_current_value(
         FileTape& source_tape,
         std::size_t& source_tape_processed,
@@ -70,21 +83,27 @@ void TapeSorter::sort(ITape& input_tape, ITape& output_tape)
         return;
     }
 
-    input_tape.rewind();
-    output_tape.rewind();
+    prepare_temp_work_dir();
 
-    std::vector< std::string > temporary_tape_paths = create_sorted_temp_tapes(input_tape);
+    try {
+        input_tape.rewind();
+        output_tape.rewind();
 
-    const std::string sorted_tape_path = merge_temp_tapes(temporary_tape_paths);
+        std::vector< std::string > temporary_tape_paths = create_sorted_temp_tapes(input_tape);
 
-    copy_sorted_tape_to_output(sorted_tape_path, output_tape);
+        const std::string sorted_tape_path = merge_temp_tapes(temporary_tape_paths);
+
+        copy_sorted_tape_to_output(sorted_tape_path, output_tape);
+    } catch (...) {
+        remove_temp_work_dir();
+        throw;
+    }
+
+    remove_temp_work_dir();
 }
 
-std::vector<std::string> TapeSorter::create_sorted_temp_tapes(ITape& input_tape) const
+std::vector< std::string > TapeSorter::create_sorted_temp_tapes(ITape& input_tape) const
 {
-    std::filesystem::remove_all("tmp/sort_work");
-    std::filesystem::create_directories("tmp/sort_work");
-
     const std::size_t block_size = calc_block_size();
     const std::size_t input_size = input_tape.size();
 
@@ -99,7 +118,7 @@ std::vector<std::string> TapeSorter::create_sorted_temp_tapes(ITape& input_tape)
         const std::size_t remaining_elements = input_size - processed_elements;
         const std::size_t current_block_size = std::min(block_size, remaining_elements);
 
-        std::vector<std::int32_t> block;
+        std::vector< std::int32_t > block;
         block.reserve(current_block_size);
 
         for (std::size_t i = 0; i < current_block_size; ++i) {
@@ -115,7 +134,7 @@ std::vector<std::string> TapeSorter::create_sorted_temp_tapes(ITape& input_tape)
 
         std::sort(block.begin(), block.end());
 
-        const std::string temporary_tape_path = "tmp/block_" + std::to_string(block_index) + ".bin";
+        const std::string temporary_tape_path = (temp_work_dir / ("block_" + std::to_string(block_index) + ".bin")).string();
 
         FileTape temporary_tape(temporary_tape_path, block.size(), config_);
 
@@ -179,7 +198,7 @@ std::string TapeSorter::merge_two_tapes(
 
     const std::size_t merged_tape_size = first_tape.size() + second_tape.size();
 
-    const std::string merged_tape_path = "tmp/soft_work/merge_" + std::to_string(merge_index) + ".bin";
+    const std::string merged_tape_path = (temp_work_dir / ("merge_" + std::to_string(merge_index) + ".bin")).string();
 
     FileTape merged_tape(merged_tape_path, merged_tape_size, config_);
 
@@ -280,5 +299,4 @@ void TapeSorter::copy_sorted_tape_to_output(const std::string& sorted_tape_path,
             }
         }
     }
-    std::filesystem::remove_all("tmp/sort_work");
 }

@@ -8,7 +8,8 @@
 #include <string>
 #include <vector>
 
-class TapeSorter {
+class TapeSorter
+{
 public:
     TapeSorter(const TapeConfig& config);
 

@@ -43,7 +43,17 @@ TapeConfig ConfigReader::read_config(const std::string& file_path)
         std::size_t num_value;
 
         try {
-            num_value = std::stoull(str_value);
+            std::size_t parsed_chars = 0;
+
+            if (!str_value.empty() && str_value[0] == '-') {
+                throw std::runtime_error("Negative numeric value: " + line);
+            }
+
+            num_value = std::stoull(str_value, &parsed_chars);
+
+            if (parsed_chars != str_value.size()) {
+                throw std::runtime_error("Invalid numeric value: " + line);
+            }
         } catch (const std::exception&) {
             throw std::runtime_error("Invalid numeric value: " + line);
         }

@@ -9,7 +9,8 @@
 #include <fstream>
 #include <string>
 
-class FileTape : public ITape {
+class FileTape : public ITape
+{
 public:
     FileTape(const std::string& file_path, const TapeConfig& config);
     FileTape(const std::string& file_path, std::size_t tape_size, const TapeConfig& config);
